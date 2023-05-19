@@ -1,6 +1,6 @@
 class Hangman
-  attr_reader :dictionary,:word, :secret
-  attr_accessor :guess
+  attr_reader :dictionary
+  attr_accessor :guess,:word,:secret
   
   def initialize
     @wrong_guess_counter = 0
@@ -38,18 +38,20 @@ class Hangman
 
   #Get the guess and make sure it's only letters. If the guess is repeated, make the player guess again.
   def get_guess
-    keep_going = true
+    stop = false
 
-    while keep_going
-      keep_going = false
-      puts "Input a guess. Only one letter!"
+    until stop
+      stop = true
+      puts "Input a guess. Only one letter! Or input \"save\" to save the game!"
       guess = gets.chomp.downcase
-      if guess.count("a-zA-Z")!= 1
+      if guess == "save"
+        self.save_game
+      elsif guess.count("a-zA-Z")!= 1
         puts "Wrong input! Input only one letter!"
-        keep_going = true
+        stop = false
       elsif @guess_control.include? guess
         puts "You already guessed #{guess}. Try another guess."
-        keep_going = true
+        stop = false
       end
     end
     self.guess_control(guess)
@@ -62,22 +64,55 @@ class Hangman
       @word.each_with_index { |val,index|  val == guess ? @secret[index] = guess : nil}
     else
       @wrong_guess_counter += 1
-      @wrong_guess_counter == 10 ? (puts) : (puts "Wrong guess! You have #{10 - @wrong_guess_counter} #{@wrong_guess_counter >=9 ? "life" : "lifes"} remaining")
+      @wrong_guess_counter < 10 ?  (puts "Wrong guess! You have #{10 - @wrong_guess_counter} #{@wrong_guess_counter >=9 ? "life" : "lifes"} remaining") : nil
     end
   end
 
+  #Game menu method will be the first one to run, and will have the options to start a new game and to load an existing game.
+  def game_menu
+    puts "Welcome to TOP's Hangman! Choose an option!"
+    puts "[1] Start a New Game"
+    puts "[2] Load an existing Game"  
+    stop = false
+    until stop
+      print "Your choice: "
+      choice = gets.chomp
+      if choice == "1"
+        stop = true
+        self.game
+      elsif choice == "2"
+        stop = true
+        self.load_game
+      else
+        puts "Wrong option! Choose between options 1 or 2!"
+      end
+    end
+  end
 
+  def load_game
+    puts "Hi"
+  end
+
+  def save_game
+    puts "Saved!"
+  end
+
+  #game loop for hangman
   def game
-    @secret = self.create_secret
+    #Initialize the game
+    self.load_dictionary
+    self.get_random_word
+    self.create_secret
+    self.print_secret
+    
+    #Guess loop
     while @wrong_guess_counter < 10
       if self.secret == self.word then break end
-      @guess = self.get_guess
+      self.guess = self.get_guess
       self.validate_guess(@guess)
       self.print_secret
     end
-
-    @wrong_guess_counter <10 ? (puts "You won! The word is #{@secret.join("")}!") : (puts "You lost! The word was #{@word.join("")}")
-
+    @wrong_guess_counter <10 ? (puts "You won! The word is \"#{self.secret.join("")}\"!") : (puts "You lost! The word was \"#{self.word.join("")}\"")
   end
 
 end
