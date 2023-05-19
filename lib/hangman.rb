@@ -1,5 +1,11 @@
 class Hangman
   attr_reader :dictionary,:word, :secret
+  attr_accessor :guess
+  
+  def initialize
+    @wrong_guess_counter = 0
+    @guess_control = Array.new
+  end
 
   def load_dictionary
     #Load dictionary from file into an array
@@ -14,18 +20,64 @@ class Hangman
     end
   end
 
+  #Create a secret with the same lenght as the word, with "_" representing the missing letters
   def create_secret
-    @secret = Array.new(@word.length)
-    @secret.map!{|value| value = "_"}
+    @secret = Array.new(@word.length).map!{|value| value = "_"}
   end
 
+  #Prints the current secret with correct guesses
   def print_secret
     self.secret.each{|value| print value +" "}
     puts
   end
 
+  #Control the guesses already made.
+  def guess_control(guess)
+    @guess_control.push(guess)
+  end
+
+  #Get the guess and make sure it's only letters. If the guess is repeated, make the player guess again.
+  def get_guess
+    keep_going = true
+
+    while keep_going
+      keep_going = false
+      puts "Input a guess. Only one letter!"
+      guess = gets.chomp.downcase
+      if guess.count("a-zA-Z")!= 1
+        puts "Wrong input! Input only one letter!"
+        keep_going = true
+      elsif @guess_control.include? guess
+        puts "You already guessed #{guess}. Try another guess."
+        keep_going = true
+      end
+    end
+    self.guess_control(guess)
+    guess
+  end
+
+  def validate_guess(guess)
+    if @word.include?(guess)
+      puts "Right guess! The letter '#{guess}' is in the word!"
+      @word.each_with_index { |val,index|  val == guess ? @secret[index] = guess : nil}
+    else
+      @wrong_guess_counter += 1
+      @wrong_guess_counter == 10 ? (puts) : (puts "Wrong guess! You have #{10 - @wrong_guess_counter} #{@wrong_guess_counter >=9 ? "life" : "lifes"} remaining")
+    end
+  end
+
+
   def game
-    @guess = self.create_secret
+    @secret = self.create_secret
+    while @wrong_guess_counter < 10
+      if self.secret == self.word then break end
+      @guess = self.get_guess
+      self.validate_guess(@guess)
+      self.print_secret
+    end
+
+    @wrong_guess_counter <10 ? (puts "You won! The word is #{@secret.join("")}!") : (puts "You lost! The word was #{@word.join("")}")
+
   end
 
 end
