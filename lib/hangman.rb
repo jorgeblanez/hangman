@@ -1,3 +1,5 @@
+require "json"
+
 class Hangman
   attr_reader :dictionary
   attr_accessor :guess,:word,:secret
@@ -59,7 +61,9 @@ class Hangman
   end
 
   def validate_guess(guess)
-    if @word.include?(guess)
+    if guess == "save"
+      puts "Game Saved! You can only have one saved game at a time"
+    elsif @word.include?(guess)
       puts "Right guess! The letter '#{guess}' is in the word!"
       @word.each_with_index { |val,index|  val == guess ? @secret[index] = guess : nil}
     else
@@ -74,12 +78,13 @@ class Hangman
     puts "[1] Start a New Game"
     puts "[2] Load an existing Game"  
     stop = false
+
     until stop
       print "Your choice: "
       choice = gets.chomp
       if choice == "1"
         stop = true
-        self.game
+        self.new_game
       elsif choice == "2"
         stop = true
         self.load_game
@@ -90,21 +95,34 @@ class Hangman
   end
 
   def load_game
-    puts "Hi"
+    loaded = JSON.parse(File.read("./save/save.json"),{symbolize_names: true})
+    self.word = loaded[:word]
+    self.secret = loaded[:secret]
+    @wrong_guess_counter = loaded[:wrong_guess_counter]
+    self.print_secret
+    self.game
   end
 
   def save_game
-    puts "Saved!"
+    save = {
+      word: self.word,
+      secret: self.secret,
+      wrong_guess_counter: @wrong_guess_counter
+    }
+    File.write("./save/save.json", JSON.dump(save))
   end
 
-  #game loop for hangman
-  def game
+  def new_game
     #Initialize the game
     self.load_dictionary
     self.get_random_word
     self.create_secret
-    self.print_secret
-    
+    self.print_secret    
+    self.game
+  end
+
+  #game loop for hangman
+  def game
     #Guess loop
     while @wrong_guess_counter < 10
       if self.secret == self.word then break end
